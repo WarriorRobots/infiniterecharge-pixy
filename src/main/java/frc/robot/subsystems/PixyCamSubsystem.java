@@ -15,67 +15,158 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-public class PixyCamSubsystem extends SubsystemBase {
-
-  // Creates the Pixy SPI bus in order to read off of
-  SPI pixy = new SPI(Port.kOnboardCS0);
-  
-  public PixyCamSubsystem() {
+public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bus in order to read off of
+	SPI pixy = new SPI(Port.kOnboardCS0);
+	public PixyCamSubsystem() {
 		pixy.setMSBFirst();
 		pixy.setChipSelectActiveLow();
 		pixy.setClockRate(1000);
 		pixy.setSampleDataOnFalling();
-    pixy.setClockActiveLow();
-    
-  }
-
-  // The sync byte to get the pixy to talk
-  byte PIXY_SYNC_BYTE = 0x5a;
-
-  private int getWord() {
+		pixy.setClockActiveLow();
+	}
+	
+	// The sync byte to get the pixy to talk
+	byte PIXY_SYNC_BYTE = 0x5a;
+	private int getWord() {
 		int word = 0x00;
 		int ret = -1;
 		ByteBuffer writeBuf = ByteBuffer.allocateDirect(2);
 		writeBuf.order(ByteOrder.BIG_ENDIAN);
 		ByteBuffer readBuf = ByteBuffer.allocateDirect(2);
 		readBuf.order(ByteOrder.BIG_ENDIAN);
-		String readString = null;
-		String writeString = null;
-
+		String readString = "";
+		String writeString = "";
+		  
 		writeBuf.put(PIXY_SYNC_BYTE);
-
+		  
 		// Flip the writeBuf so it's ready to be read.
 		writeBuf.flip();
 
 		// Send the sync / data bit / 0 to get the Pixy to return data appropriately.
 		ret = pixy.transaction(writeBuf, readBuf, 2);
-
+		  
 		// Set the position back to 0 in the buffer so we read it from the beginning next time.
 		readBuf.rewind();
-
+		  
 		// Store the contents of the buffer in a int that will be returned to the caller.
 		word = (int) (readBuf.getShort() & 0xffff);
-
+		  
 		// Clear the buffers, not needed, but nice to know they are cleaned out.
 		writeBuf.clear();
 		readBuf.clear();
 		return(word);
-  }
+	}
+	
+	// code to test the get word function
+	
+	ArrayList<Integer> words = new ArrayList<Integer>();
+	int i;
+	
+	String[] byteNames = {"checksum","signature","x","y","width","height"};
+	Boolean syncByte;
+	int count = 0;
 
-  ArrayList<Integer> words;
-  int i;
-  
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
+	@Override
+	public void periodic() {
+		int word;
+		int wordsToRead = 0;
+		int checksum = 0;
+		Boolean syncFound = false;
 
-    // Stores words from the pixy cam to read off the smart dashboardS
-    for(i=0; i<=8; i++);
-      words.add(getWord());
-    for(i=0; i<=16; i++);
-      String I = "" + i;
-      SmartDashboard.putNumber(I, words.get(i));
-  }
+		// Every iteration of this periodic function will start with a clean ArrayList of words.
+		// Then we know the largest object will be at the beginning of this ArrayList.
+		words.clear();
+
+		// Read no more than 100 words per periodic function.  100 is just
+		// a guess, and the actual amount we can read without interfering 
+		// with other periodic robot functions needs to be determined.
+		for (int i = 0; i < 100; i++){
+
+			word = getWord();
+
+			// If we have found the start of a frame, read the remaining words of the block.
+			// After the last word, break out of the loop to allow other robot functions to run.
+			if (wordsToRead > 0){
+				if (checksum == 0){
+					checksum = word;
+				}
+				else {
+					checksum -= word;
+				}
+
+				// Add the word to the array list of words
+				words.add(word);
+
+				// If we are done reading words of the block, we check the checksum; 
+				// if the checksum is bad, dump the array list.  Either 
+				// way, we break out of the loop.
+				if (--wordsToRead <= 0) {
+					if (checksum != 0)
+						words.clear();
+					break;
+				}
+			}
+			else if (word == 0xaa55){
+				if (syncFound) {
+					// We have seen two sync words and we know we have 
+					// found the start of a frame of many blocks.  We prepare
+					// to read the remaining words on the next pass of the loop.
+					wordsToRead = 6;
+				}
+				else {
+					// We found the start of a block, but we need to wait for the
+					// start of the frame to make sure we get the largest object.
+					syncFound = true;
+				}
+			}
+			else {
+				// Clear out the sync flag since we did not read a sync word.
+				syncFound = false;
+			}
+
+		}
+
+		// If we did not find a valid block, push a null byte to identify the null block.
+		if (words.size() == 0) {
+			words.add(0);
+		}
+
+		// If the checksum of the block is valid 
+		if (checksum == 0) {
+			for(i=0; i<words.size(); i++){
+				// String I = "" + i;
+				// SmartDashboard.putNumber(I, words.get(i));
+				SmartDashboard.putNumber(byteNames[i], words.get(i));
+			}
+		}
+
+		/*
+		// code to test the get word function
+		
+		for(i=0; i<=8; i++){
+			words.add(getWord());
+		}
+		
+		for(i=0; i<=8; i++){
+			String I = "" + i;
+			SmartDashboard.putNumber(I, words.get(i));
+		}
+		SmartDashboard.putNumber("9", count++);
+		*/
+
+		/*
+		int word = getWord();
+		if((word==0xaa55) && (syncByte==true)){
+			for(int i =0; i<6; i++){
+				// SmartDashboard.putNumber(byteNames[i], getWord());
+				SmartDashboard.putNumber("", getWord());
+			}
+		}
+		else if(word==0xaa55){
+			syncByte = true;
+		}
+		*/
+	}
 }
 /**
  private int getWord() {
