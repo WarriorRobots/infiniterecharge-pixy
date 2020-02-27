@@ -57,14 +57,69 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 		return(word);
 	}
 	
-	// code to test the get word function
+	/**
+	 * The position the largest block in x
+	 * @return Position x in decimal bytes
+	 */
+	public int getXRaw() {
+		if(words.get(0)!=0) {
+			return words.get(2);
+		}
+		else {
+			return -1;
+		}
+	}
+
+	/**
+	 * The position the largest block in y
+	 * @return Position y in decimal bytes
+	 */
+	public int getYRaw() {
+		if(words.get(0)!=0) {
+			return words.get(3);
+		}
+		else {
+			return -1;
+		}
+	}
 	
+	/**
+	 * The width of the largest block
+	 * @return Width in decimal bytes
+	 */
+	public int getWidthRaw() {
+		if(words.get(0)!=0) {
+			return words.get(4);
+		}
+		else {
+			return -1;
+		}
+	}
+
+	/**
+	 * The height of the largest block
+	 * @return Height in decimal bytes
+	 */
+	public int getHeightRaw() {
+		if(words.get(0)!=0) {
+			return words.get(5);
+		}
+		else {
+			return -1;
+		}
+	}
+
+	// Names of the bytes the get word will return in order
+	String[] byteNames = {"checksum","signature","x","y","width","height"};
+	// Array for storing the bytes the Rio reads off of SPI
 	ArrayList<Integer> words = new ArrayList<Integer>();
+	int checksumError = 0;
 	int i;
 	
-	String[] byteNames = {"checksum","signature","x","y","width","height"};
-	Boolean syncByte;
-	int count = 0;
+	// old get word debuging/test code
+	// Boolean syncByte;
+	// int count = 0;
+	
 
 	@Override
 	public void periodic() {
@@ -98,11 +153,12 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 				words.add(word);
 
 				// If we are done reading words of the block, we check the checksum; 
-				// if the checksum is bad, dump the array list.  Either 
-				// way, we break out of the loop.
+				// if the checksum is bad, dump the array list and count up the checksum error.
+				// Either way, we break out of the loop.
 				if (--wordsToRead <= 0) {
 					if (checksum != 0)
 						words.clear();
+						checksumError+=1;
 					break;
 				}
 			}
@@ -133,15 +189,23 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 
 		// If the checksum of the block is valid 
 		if (checksum == 0) {
+			
 			for(i=0; i<words.size(); i++){
 				// String I = "" + i;
 				// SmartDashboard.putNumber(I, words.get(i));
 				SmartDashboard.putNumber(byteNames[i], words.get(i));
+			
+			SmartDashboard.putNumber("command " + byteNames[2], getXRaw());
+			SmartDashboard.putNumber("command " + byteNames[3], getYRaw());
+			SmartDashboard.putNumber("command " + byteNames[4], getWidthRaw());
+			SmartDashboard.putNumber("command " + byteNames[5], getHeightRaw());
 			}
+
+		SmartDashboard.putNumber("Checksum Errors", checksumError);
 		}
 
 		/*
-		// code to test the get word function
+		// old get word debuging/test code
 		
 		for(i=0; i<=8; i++){
 			words.add(getWord());
@@ -168,35 +232,3 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 		*/
 	}
 }
-/**
- private int getWord() {
-		int word = 0x00;
-		int ret = -1;
-		ByteBuffer writeBuf = ByteBuffer.allocateDirect(2);
-		writeBuf.order(ByteOrder.BIG_ENDIAN);
-		ByteBuffer readBuf = ByteBuffer.allocateDirect(2);
-		readBuf.order(ByteOrder.BIG_ENDIAN);
-		String readString = null;
-		String writeString = null;
-
-		writeBuf.put(PIXY_SYNC_BYTE);
-
-		// Flip the writeBuf so it's ready to be read.
-		writeBuf.flip();
-
-		// Send the sync / data bit / 0 to get the Pixy to return data appropriately.
-		ret = pixy.transaction(writeBuf, readBuf, 2);
-
-		// Set the position back to 0 in the buffer so we read it from the beginning next time.
-		readBuf.rewind();
-
-		// Store the contents of the buffer in a int that will be returned to the caller.
-		word = (int) (readBuf.getShort() & 0xffff);
-
-		// Clear the buffers, not needed, but nice to know they are cleaned out.
-		writeBuf.clear();
-		readBuf.clear();
-		return(word);
-	}
- 
-    */
