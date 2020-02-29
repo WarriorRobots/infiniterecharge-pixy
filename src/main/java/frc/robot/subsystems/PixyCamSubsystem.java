@@ -59,7 +59,7 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 	
 	/**
 	 * The position the largest block in x
-	 * @return Position x in decimal bytes
+	 * @return position from 0-315
 	 */
 	public int getXRaw() {
 		if(words.get(0)!=0) {
@@ -72,7 +72,7 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 
 	/**
 	 * The position the largest block in y
-	 * @return Position y in decimal bytes
+	 * @return position from 0-207
 	 */
 	public int getYRaw() {
 		if(words.get(0)!=0) {
@@ -85,7 +85,7 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 	
 	/**
 	 * The width of the largest block
-	 * @return Width in decimal bytes
+	 * @return width from 0-316
 	 */
 	public int getWidthRaw() {
 		if(words.get(0)!=0) {
@@ -98,7 +98,7 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 
 	/**
 	 * The height of the largest block
-	 * @return Height in decimal bytes
+	 * @return height from 0-208
 	 */
 	public int getHeightRaw() {
 		if(words.get(0)!=0) {
@@ -107,6 +107,39 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 		else {
 			return -1;
 		}
+	}
+
+	/**
+	 * The angle the ball should be if it is in front of the robot
+	 * @return angle in degrees
+	 
+	public double getXAngleRight() {
+		Math.acos(a);
+	}
+	*/
+
+	/**
+	 * The horizontal angle the object is relative to the camera
+	 * @return angle in degrees
+	 */
+	public double getXAngle() {
+		// centers raw pixy output between -158 & 158
+		// changes the output unitless between -0.5 & 0.5
+		// converts unitless number to degrees by multiplying the FoV
+		return 75*(getXRaw()-158)/316;
+	}
+
+	/**
+	 * The distance of the object in inches
+	 * @return distance in inches
+	 */
+	public double getDistance() {
+		// ratio of the ball inches/pixels
+		double ratio = getXRaw()/316;
+		// distance to the ball in pixels
+		double pixelDistance = 158/Math.tan(75*Math.PI/180);
+		// converts distance in pixels to distance in inches using the ratio
+		return ratio*pixelDistance;
 	}
 
 	// Names of the bytes the get word will return in order
@@ -199,6 +232,8 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 			SmartDashboard.putNumber("command " + byteNames[3], getYRaw());
 			SmartDashboard.putNumber("command " + byteNames[4], getWidthRaw());
 			SmartDashboard.putNumber("command " + byteNames[5], getHeightRaw());
+			SmartDashboard.putNumber("distance", getDistance());
+			SmartDashboard.putNumber("x angle", getXAngle());
 			}
 
 		SmartDashboard.putNumber("Checksum Errors", checksumError);
