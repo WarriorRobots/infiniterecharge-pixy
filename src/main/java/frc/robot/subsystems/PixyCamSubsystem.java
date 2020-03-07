@@ -114,6 +114,10 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 		return a / (double) getWidthRaw();
 	}
 
+	public double getAngleX() {
+		return 70*(getXRaw()-158)/316.0;
+	}
+
 	// Names of the bytes the get word will return in order
 	String[] byteNames = {"checksum","signature","x","y","width","height"};
 	// Array for storing the bytes the Rio reads off of SPI
@@ -194,18 +198,19 @@ public class PixyCamSubsystem extends SubsystemBase {	// Creates the Pixy SPI bu
 
 		// If the checksum of the block is valid 
 		if (checksum == 0) {
-			
+			/*
 			for(i=0; i<words.size(); i++){
 				// String I = "" + i;
 				// SmartDashboard.putNumber(I, words.get(i));
 				SmartDashboard.putNumber(byteNames[i], words.get(i));
-			
-			SmartDashboard.putNumber("command " + byteNames[2], getXRaw());
-			SmartDashboard.putNumber("command " + byteNames[3], getYRaw());
-			SmartDashboard.putNumber("command " + byteNames[4], getWidthRaw());
-			SmartDashboard.putNumber("command " + byteNames[5], getHeightRaw());
 			}
-
+			*/
+		SmartDashboard.putNumber(byteNames[2], getXRaw());
+		SmartDashboard.putNumber(byteNames[3], getYRaw());
+		SmartDashboard.putNumber(byteNames[4], getWidthRaw());
+		SmartDashboard.putNumber(byteNames[5], getHeightRaw());
+		SmartDashboard.putNumber("angle", getAngleX());
+		SmartDashboard.putNumber("distance", getDistance());
 		SmartDashboard.putNumber("Checksum Errors", checksumError);
 		}
 
