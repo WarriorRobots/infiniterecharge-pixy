@@ -9,9 +9,13 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.commands.AutoPickupBall;
 import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.TankDrive;
+import frc.robot.subsystems.DrivetrainSubsystem;
 import frc.robot.subsystems.PixyCamSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -22,9 +26,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final PixyCamSubsystem m_pixy = new PixyCamSubsystem();
+  private final DrivetrainSubsystem m_drive = new DrivetrainSubsystem();
+  private final AutoPickupBall m_autoPickupBall = new AutoPickupBall(m_pixy, m_drive);
+  private final TankDrive m_tankDrive = new TankDrive(m_drive, ()->IO.getLeftY(), ()->IO.getRightY());
   private final ExampleCommand m_autoCommand = new ExampleCommand();
-
-
 
   /**
    * The container for the robot.  Contains subsystems, OI devices, and commands.
@@ -32,6 +37,8 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
+
+    CommandScheduler.getInstance().setDefaultCommand(m_drive, m_tankDrive);
   }
 
   /**
@@ -41,6 +48,7 @@ public class RobotContainer {
    * {@link edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    IO.right6.whenPressed(m_autoPickupBall);
   }
 
 
