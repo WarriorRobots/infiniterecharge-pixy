@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.DrivetrainSubsystem;
 import frc.robot.subsystems.PixyCamSubsystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class AutoPickupBall extends CommandBase {
   PixyCamSubsystem m_pixy;
@@ -75,6 +76,10 @@ public class AutoPickupBall extends CommandBase {
 
   @Override
   public void execute() {
+    if(m_pixy.PIXY_BALL_EXISTS == false) {
+      m_drive.stop();
+      return;
+    }
     // all calculations can be found on pg 37 of the engineering notebook
     double a;
     double b = 12; //Vars.PIXY_INTAKE_OFFSET;
@@ -89,18 +94,26 @@ public class AutoPickupBall extends CommandBase {
     robot_distance = a;
     if(c * c > a_squared + b * b) {
       C = 180 - A - Math.asin(b * Math.sin(A) / a);
+      C = C - 90 - 23.5;
+      SmartDashboard.putString("function", "C = 180 - A - Math.asin(b * Math.sin(A) / a);");
     }
     else if(c * c < a_squared + b * b) {
       C = Math.asin(c * Math.sin(A) / a);
+      SmartDashboard.putString("function", "C = Math.asin(c * Math.sin(A) / a);");
     }
     else {
       return;
     }
-    robot_angle = C - 90 - 23.5;
+    robot_angle = C;
 
+    SmartDashboard.putNumber("distance", robot_distance);
+    SmartDashboard.putNumber("angle", robot_angle);
+    
+    
     m_drive.arcadedriveRaw(
-      pidDistance.calculate(robot_distance),
-      pidAngle.calculate(robot_angle));
+      -pidDistance.calculate(robot_distance-30),
+      -pidAngle.calculate(robot_angle-5));
+    
   }
 
   // Called once the command ends or is interrupted.
